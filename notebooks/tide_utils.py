@@ -37,20 +37,14 @@ def load_files(tidal_filename, galaxy_cat_filename, mask_filename, verbose=True)
     hdu = fits.open(galaxy_cat_filename)
     galaxy_data = hdu[1].data
 
-    # masking and cuts
-    galaxy_ind = hp.ang2pix( 
-        nside=nside, 
-        phi=galaxy_data['dec'], theta=galaxy_data['ra'], lonlat=True )
+    # read mask
     mask = hp.read_map(mask_filename, verbose=verbose)
-    ellip = (1-galaxy_data['j_ba'])
-    cut = np.logical_and(galaxy_data['kcorr_schlegel'] < 13.9, mask[galaxy_ind] > 0.0)
-    cut = np.logical_and(cut, ellip > 0.5)
-    galaxy_data = galaxy_data[ cut ]
-    
+
     return tide_dict, galaxy_data, mask
 
 
-def compute_principal_eig( t11, t12, t22 ):
+
+def compute_eig( t11, t12, t22 ):
     """Computes principal eigenvalues/vectors from tidal tensor components.
     
     Args:
@@ -72,17 +66,23 @@ def compute_principal_eig( t11, t12, t22 ):
     
     # solve eigenvalues
     w,v = np.linalg.eig(a=array_stack)
-    princ_eig_ind = np.argmax( np.abs(w), axis=1 )
-    princ_eigenvectors = np.array( [v[i,:,princ_eig_ind[i]] for i in range(npix)] )
-    princ_eigenvalues = np.array( [w[i,princ_eig_ind[i]] for i in range(npix)] )
+    long_eig_ind = np.argmax( np.abs(w), axis=1 )
+    short_eig_ind = np.argmin( np.abs(w), axis=1 )
     
-    return princ_eigenvalues, princ_eigenvectors
+    princ_eigenvectors = np.array( [v[i,:,long_eig_ind[i]] for i in range(npix)] )
+    princ_eigenvalues = np.array( [w[i,long_eig_ind[i]] for i in range(npix)] )
+    
+    
+    short_eigenvectors = np.array( [v[i,:,short_eig_ind[i]] for i in range(npix)] )
+    short_eigenvalues = np.array( [w[i,short_eig_ind[i]] for i in range(npix)] )
+    
+    return princ_eigenvalues, princ_eigenvectors, short_eigenvalues, short_eigenvectors
 
     
 def get_cutout_from_hp(field, bbox,
                        kernel_width=1e-4, 
                        xp=50, yp=50, debug=False, 
-                       rot=(0,0,0), hold=False):
+                       rot=(0,0,0), hold=False, title=""):
     """Get a rectangular cutout of a healpix map
         
         kernel_width: gotta sample the healpix map with a gaussian kernel
@@ -120,12 +120,12 @@ def get_cutout_from_hp(field, bbox,
             np.logical_and( ph < center_phi + width/2, ph > center_phi - width/2 )
             )
         den_copy_highlighted[~region] *= 0.1
-        hp.mollview( den_copy_highlighted, rot=rot, hold=hold)
+        hp.mollview( den_copy_highlighted, rot=rot, hold=hold, title=title)
     
     return smoothed_cutout, ph_grid, th_grid
 
 
-def plot_vectorfield(ax, bbox, nside, healpix_vectorfield, arrowscaling=0.01):
+def plot_vectorfield(ax, bbox, nside, healpix_vectorfield, arrowscaling=0.01, color="k", debug=False):
     """Plot a vectorfield onto an axis within a bbox
     """
     width = bbox[1] - bbox[0]
@@ -141,12 +141,14 @@ def plot_vectorfield(ax, bbox, nside, healpix_vectorfield, arrowscaling=0.01):
             # plot vector
             vec = healpix_vectorfield[i,:] 
             dx, dy = vec[0] * arrowscaling, vec[1] * arrowscaling
-            ax.arrow( ph0 - dx/2, th0 - dy/2, dx, dy, lw=0.5, head_width=0, color="k" )
+            ax.arrow( ph0 - dx/2, th0 - dy/2, dx, dy, lw=0.5, head_width=0, color=color )
+            if debug:
+                print(dx, dy)
     ax.set_xlim(bbox[0], bbox[1])
     ax.set_ylim(bbox[2], bbox[3])
     
     
-def plot_row( three_indices, data, phi_x, phi_y ):
+def plot_row( three_indices, data, phi_x, phi_y, debug=False ):
     """Plot three galaxies from a galaxy catalog with ellipticity
     """
     
@@ -165,9 +167,39 @@ def plot_row( three_indices, data, phi_x, phi_y ):
         im[im < 0] = 0
         wcs = WCS(hdu_im.header)
         ax = fig.add_subplot(1, 3, fig_i+1, projection=wcs)  # create an axes object in the figure
-        ax.imshow( im , origin='lower', vmax=np.mean(im) + 1*np.std(im))
+        ax.imshow( im, vmax=np.mean(im) + 1*np.std(im), origin='lower')
         amp = 5 * (1-data['j_ba'][i])  
-        ax.arrow(49 / 2, 49 / 2, dx=amp*phi_x[i], dy=amp*phi_y[i], color="black", lw=3, head_width=1 )
-
+        ax.arrow(49 / 2, 49 / 2, dx=-amp*phi_x[i], dy=-amp*phi_y[i], color="black", lw=3, head_width=1 )
+        if debug:
+            print(phi_x[i], phi_y[i])
+        lon = ax.coords['ra']
+        lat = ax.coords['dec']
+        lon.set_major_formatter("d.ddd")
+        lat.set_major_formatter("d.ddd")
+        ax.set_xlabel('ra')
+        if fig_i == 0:
+            ax.set_ylabel('dec')
+            
     plt.tight_layout()
     
+    
+def compute_galaxy_inertia_tensor(polar_angle, ba, r):
+    """Compute inertia tensor from b/a and phi
+    
+    polar_angle (numpy array) : traditional polar angle 
+        (i.e. CCW angle in radians above the x axis)
+    ba (numpy array) : ratio of axes
+    r (numpy array) : semimajor axis, this is squared and multiplied
+        to the tensor
+    """
+    sphi = np.sin(polar_angle)
+    cphi = np.cos(polar_angle)
+    s2phi = np.sin(2 * polar_angle)
+    
+    J = np.zeros( (len(polar_angle),2,2) )
+    J[:,0,0] = (cphi**2 + ba**2 * sphi**2)* r**2
+    J[:,1,0] = (0.5 * (s2phi - ba**2 * s2phi)) * r**2
+    J[:,0,1] = (0.5 * (s2phi - ba**2 * s2phi)) * r**2
+    J[:,1,1] = (sphi**2 + ba**2 * cphi**2) * r**2
+    
+    return J    

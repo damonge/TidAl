@@ -1,0 +1,5 @@
+# Ignore binaries
+notes/notes.pdf
+
+# Ignore pyc files
+*.pyc

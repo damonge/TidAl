@@ -11,11 +11,12 @@ def cr_1(m_data,                 #Map with the data
          cl_signal,              #Power spectrum of the signal
          m_true=None,            #Map with the true signal (only needed for comparison plots)
          smooth_scale_mask=0.05, #Apodization scale for the mask (in rad)
-         include_random=True,       #Add random fluctuations to the Wiener-filtered map
+         include_random=True,    #Add random fluctuations to the Wiener-filtered map
          n_iter_max=500,         #Maximum number of CG iterations
-         plot_stuff=False,           #Set to 1 to plot informative maps
+         plot_stuff=False,       #Set to 1 to plot informative maps
          info_output_rate=100,   #Output CG information every 100 iterations
-         seed=-1) :              #Random seed
+         seed=-1,                #Random seed
+         verbose=False) :        #Verbosity
     global glb_niter
     glb_niter=0
     npix=len(m_data)
@@ -95,7 +96,8 @@ def cr_1(m_data,                 #Map with the data
         rn=np.random.randn(npix)
         b+=prod_fourier(rs,np.sqrt(pix_area*icl_signal))+prod_inoise(rn,0.5)
 
-    print("Solving")
+    if verbose :
+        print("Solving")
     map_solve,info=cg(A,b,x0=m_data,maxiter=n_iter_max,M=M,callback=callback)
     if plot_stuff :
         hp.mollview(map_solve,title="Solved %d"%info); plt.show()

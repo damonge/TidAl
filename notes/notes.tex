@@ -1,0 +1,79 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[left=2.5cm, right=2.5cm, top=2.5cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{hyperref}
+\newcommand{\nv}{\hat{\bf n}}
+\newcommand{\aj}    {{\em Astron.\ J.}}
+\newcommand{\aap}{{\em Astron.\ Astrophys.}}
+\newcommand{\apj}{{\em Astrophys.\ J.}}
+\newcommand{\apjl}{{\em Astrophys.\ J.\ Lett.}}
+\newcommand{\apjs}{{\em Astrophys.\ J.\ Suppl.}}
+\newcommand{\mnras}{{\em Mon.\ Not.\ R.\ Astron.\ Soc.}}
+\newcommand{\npb}{{\em Nucl.\ Phys.\ B}}
+\newcommand{\nat}{{\em Nature}}
+\newcommand{\physrep}{{\em Phys.\ Rep.}}
+\newcommand{\pasj}{{\em Publ.\ Astron.\ Soc.\ Japan}}
+\newcommand{\pasp}{{\em Publ.\ ASP}}
+\newcommand{\jcap}{{\em J.\ Cosmol.\ Astropart.\ Phys.}}
+\newcommand{\prd}{{\em Phys.\ Rev.\ D}}
+\newcommand{\prl}{{\em Phys.\ Rev.\ Lett.}}
+\newcommand{\procspie}{Proceedings of the SPIE}
+
+\title{Tidal alignments}
+\date{\today}
+
+
+\begin{document}
+\maketitle
+
+\section{Definitions}
+  \begin{itemize}
+    \item {\bf Differential operator:} the differential operator $\eth$ is defined by its action on a spin-$s$ quantity $\,_sf$:
+    \begin{equation}
+      \eth\,_sf=-(\sin\theta)^s\left(\partial_\theta+i\frac{\partial_\varphi}{\sin\theta}\right)(\sin\theta)^{-s}\,_sf.\\
+      \bar{\eth}\,_sf=-(\sin\theta)^{-s}\left(\partial_\theta-i\frac{\partial_\varphi}{\sin\theta}\right)(\sin\theta)^s\,_sf.\\
+    \end{equation}
+    Note that, using the IAU convention, in the flat-sky approximation this reads as $\eth=\partial_x - i\partial_y$.
+    \item {\bf Projected potential:} we define the projected potential to be the solution to the 2D Poisson equation on the sphere with a source given by the projected galaxy overdensity:
+    \begin{equation}
+      \phi_g(\nv)\equiv\left[\nabla^{-2}\delta_g\right]_{\nv}={\rm SHT}^{-1}\left(-\left(\ell(\ell+1)\right)^{-1}{\rm SHT}(\delta_g)_{\ell m}\right)_{\nv}
+    \end{equation}
+    \item {\bf Projected tidal field:} the projected tidal field is given by the Hessian of the projected potential. This is defined in terms of $\eth$ as:
+    \begin{align}
+      {\sf t}\equiv{\sf H}\phi
+      &=\frac{1}{2}\left(
+      \begin{array}{cc}
+        \bar{\eth}\eth\phi+{\rm Re}(\eth\eth\phi) & {\rm Im}(\eth\eth\phi) \\
+        {\rm Im}(\eth\eth\phi) & \bar{\eth}\eth\phi-{\rm Re}(\eth\eth\phi)
+      \end{array}\right)
+      =\frac{1}{2}\left(
+      \begin{array}{cc}
+        t_0+t_Q & t_U\\
+        t_U & t_0-t_Q
+      \end{array}
+      \right)
+    \end{align}
+    where we've defined a spin-0 field $t_0\equiv\bar{\eth}\eth\phi=t_{\theta\theta}+t_{\varphi\varphi}$ and a spin-2 field $t_2\equiv\eth\eth\phi\equiv t_Q+it_U=(t_{\theta\theta}-t_{\varphi\varphi})+2it_{\theta\varphi}$. Note that, by definition, $t_0=\delta_g$.
+    \item {\bf Inertia tensor:} the projected inertia tensor of a given galaxy is given by:
+    \begin{equation}
+      I_{ij}=\frac{\int dx^2\,B({\bf x})\,x_ix_j}{\int dx^2\,B({\bf x})},
+    \end{equation}
+    where $B$ is the galaxy's brightness and $(x_1,x_2)$ are two orthogonal coordinates in the galaxy's image. For concreteness we will assume here that $x_1$ is oriented along the dec. direction (growing with it) and that $x_2$ is oriented along the R.A. direction (also growing with it).
+    
+    For an ellipse with semi-major axis $a$, sphericity $s=b/a$ and position angle $\alpha$ (i.e. the angle of the semi-major axis with the $x_1$ axis), the inertia tensor can be written as above:
+    \begin{equation}
+      {\sf I}=\frac{1}{2}\left(
+      \begin{array}{cc}
+        I_0+I_Q & I_U \\
+        I_U & I_0-I_Q
+      \end{array}
+      \right),
+    \end{equation}
+    where
+    \begin{equation}
+      I_0\equiv\frac{a^2}{4}(1+s^2),\hspace{12pt}(I_Q,I_U)=I_0\frac{1-s^2}{1+s^2}\left(\cos2\alpha,\sin2\alpha\right).
+    \end{equation}
+\end{itemize}
+
+\end{document}

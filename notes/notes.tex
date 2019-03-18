@@ -61,7 +61,7 @@
     \end{equation}
     where $B$ is the galaxy's brightness and $(x_1,x_2)$ are two orthogonal coordinates in the galaxy's image. For concreteness we will assume here that $x_1$ is oriented along the dec. direction (growing with it) and that $x_2$ is oriented along the R.A. direction (also growing with it).
     
-    For an ellipse with semi-major axis $a$, sphericity $s=b/a$ and position angle $\alpha$ (i.e. the angle of the semi-major axis with the $x_1$ axis), the inertia tensor can be written as above:
+    For an ellipse with semi-major axis $a$, sphericity $s=b/a$ and position angle $\psi$ (i.e. the angle of the semi-major axis with the $x_1$ axis), the inertia tensor can be written as above:
     \begin{equation}
       {\sf I}=\frac{1}{2}\left(
       \begin{array}{cc}
@@ -72,8 +72,99 @@
     \end{equation}
     where
     \begin{equation}
-      I_0\equiv\frac{a^2}{4}(1+s^2),\hspace{12pt}(I_Q,I_U)=I_0\frac{1-s^2}{1+s^2}\left(\cos2\alpha,\sin2\alpha\right).
+      I_0\equiv\frac{a^2}{4}(1+s^2),\hspace{12pt}(I_Q,I_U)=I_0\frac{1-s^2}{1+s^2}\left(\cos2\psi,\sin2\psi\right).
     \end{equation}
-\end{itemize}
+    $I_0$ is a spin-0 field, and $I_2\equiv I_Q+iI_U$ is a spin-2 field.
+    
+    \item {\bf Ellipticity tensor:} the ellipticity tensor of a given object is often defined by normalizing the inertia tensor by its trace:
+    \begin{equation}
+      \mathsf{\Gamma}=\frac{{\sf I}}{{\rm Tr}({\sf I})}-\frac{1}{2}\mathsf{1}=\frac{1-s^2}{1+s^2}
+      \left(
+      \begin{array}{cc}
+       \cos2\psi & \sin2\psi\\
+       \sin2\psi & -\cos2\psi
+      \end{array}
+      \right)\equiv\left(
+      \begin{array}{cc}
+       \Gamma_Q & \Gamma_U\\
+       \Gamma_U & -\Gamma_Q
+      \end{array}
+      \right).
+    \end{equation}
+    $\mathsf{\Gamma}$ is a pure spin-2 quantity, with $\Gamma_2\equiv\Gamma_Q+i\Gamma_U$.
+    \item {\bf Coordinates:} the inertia tensor and ellipticities are usually defined with the $x_1$ and $x_2$ axes defined by the directions of increasing declination ($\delta$) and R.A. ($\alpha$) respectively. Our tidal tensor, however, is defined with $x_1$ and $x_2$ being the directions of increasing azimuth ($\varphi$) and colatitude ($\theta$), which is also the convention used by {\tt HEALPix}. Since $d\theta=-d\delta$ and $d\alpha=d\varphi$, this implies that, under this change of coordinates:
+    \begin{equation}
+      \psi\rightarrow\pi-\psi,\hspace{12pt}\cos2\psi\rightarrow\cos2\psi,\hspace{12pt}\sin2\psi\rightarrow-\sin2\psi,
+    \end{equation}
+    and therefore
+    \begin{align}
+      &t_0\rightarrow t_0,\hspace{12pt}t_Q\rightarrow t_Q,\hspace{12pt}t_U\rightarrow-t_U,\\
+      &I_0\rightarrow I_0,\hspace{12pt}I_Q\rightarrow I_Q,\hspace{12pt}I_U\rightarrow-I_U,\\
+      &\Gamma_Q\rightarrow\Gamma_Q,\hspace{12pt}\Gamma_U\rightarrow-\Gamma_U.
+    \end{align}
+    In order to conform to the {\tt HEALPix} standard we will correct the inertia/ellipticity by flipping the sign of the $U$ component.
+  \end{itemize}
+
+\section{Models}
+  We will explore 2 models:
+  \begin{itemize}
+    \item Model 1 has two free parameters, $(A_0,A_2)$, with $\Delta I_{0,2}(\vec{\theta})/\bar{I}_0=A_{0,2}\,t_{0,2}$. Here $\bar{I}_s$ is the mean of $I_s$ across the sky, with $\bar{I}_2=0$, and $\Delta I_s\equiv I_s-\bar{I}_s$.
+    \item Model 2 has one free parameter, $B_0$, with $\Gamma_2=B_2\,t_2$.
+  \end{itemize}
+
+\section{Estimators}
+  The two models above can be written as:
+  \begin{equation}
+    \hat{F}^X_s=X_s\,t_s+n^{X,F}_s,
+  \end{equation}
+  with $\hat{F}^A_s\equiv\Delta\hat{I}_s/\bar{I}_0$, and $\hat{F}^B_2\equiv\Gamma_2$. All hatted quantities are observed fields with noise $n^{X,F}$.
+  At the same time, we have a measurement of $t$:
+  \begin{equation}
+    \hat{t}_s=t_s+n^t_s.
+  \end{equation}
+  
+  For all the estimators below, I'd recommend repeating them on an ensemble of mocks in order to estimate error bars (e.g. made from the data by rotating position angles, randomizing shapes between sources etc.).  
+  \subsection{Zero-lag estimator}
+    Let's start by assuming that all noises are white (i.e. uncorrelated between pixels. In that case: $\hat{F}^X_s-X_s\hat{t}_s=\tilde{n}^{X,F}_s\equiv n^{X,F}_s-X_sn^t_s$ has a diagonal covariance with per-pixel variance $\tilde{\sigma}^2$. Its likelihood is given by:
+    \begin{equation}
+      {\cal L}=\sum_p \tilde{\sigma}^{-2}_p\left|\hat{F}^X_{s,p}-X_s\hat{t}_{s,p}\right|^2.
+    \end{equation}
+    The value of $X_s$ that maximizes this likelihood is:
+    \begin{equation}
+      X_s=\frac{\sum_p {\rm Re}\left(\hat{F}^X_{s,p}\hat{t}^*_{s,p}\right)\tilde{\sigma}^{-2}_p}{\sum_p |\hat{t}_{s,p}|^2\tilde{\sigma}^{-2}_p}=\frac{\sum_p {\rm Re}\left(\hat{F}^X_{s,p}\hat{t}^*_{s,p}\right)}{\sum_p |\hat{t}_{s,p}|^2}
+    \end{equation}
+    
+  \subsection{Template power spectrum estimator}
+    In this case we propose a model for the cross-power spectrum between $\hat{t}_s$ and $\hat{F}^{X}_s$:
+    \begin{equation}
+      \hat{C}^{Ft}_\ell=X_s\,S^{tt}_\ell,
+    \end{equation}
+    where $S^{tt}_\ell$ is a template for the power spectrum of $t_s$ (this can be done from the power spectrum of $\hat{t}_s$ after subtracting the shot-noise contribution and fitting a smooth model to the residual).
+    The corresponding maximum-likelihood estimator is given by:
+    \begin{equation}
+      X_s=\frac{\sum_{\ell\ell'}\hat{C}^{Ft}_\ell\,{\rm Cov}^{-1}_{\ell\ell'}S^{tt}_{\ell'}}{\sum_{\ell\ell'}S^{tt}_\ell\,{\rm Cov}^{-1}_{\ell\ell'}S^{tt}_{\ell'}}.
+    \end{equation}
+    A good thing about this method is that we can evaluate goodness of fit by looking at the $\chi^2$:
+    \begin{equation}
+      \chi^2(X_s)=\left(\hat{C}^{Ft}-X_sS^{tt}\right)^T{\rm Cov}^{-1}\left(\hat{C}^{Ft}-X_sS^{tt}\right),
+    \end{equation}
+    where we have grouped all power spectra into vectors for simplicity.   
+   
+    The covariance can be estimated properly, or we can have a quick guess of it using the Knox formula:
+    \begin{equation}
+      {\rm Cov}_{\ell\ell'}=\delta_{\ell\ell'}\frac{\left(C^{Ft}_\ell\right)^2+C^{tt}_\ell C^{FF}_\ell}{2\ell+1},
+    \end{equation}
+    where I've ignored $f_{\rm sky}$ factors because they cancel out in the end. If we assume that $F$ is noise-dominated, which is probably a good assumption, this can be simplified to
+    \begin{equation}
+      {\rm Cov}_{\ell\ell'}=\delta_{\ell\ell'}\frac{C^{tt}_\ell N^{FF}_\ell}{2\ell+1}.
+    \end{equation}
+    Here, $C^{tt}_\ell$, which contains both signal and noise, can be computed directly from the data. The noise power spectrum for $F$ ($N^{FF}_\ell$) can be estimated from random mocks (or even from the data).
+    
+    We could even simplify things further using this approximation:
+    \begin{equation}
+      X_s=\frac{\sum_\ell (\ell+1/2) (N^{FF}_\ell)^{-1}W^t_\ell\hat{C}^{Ft}_\ell}{\sum_\ell(\ell+1/2) (N^{FF}_\ell)^{-1}W^t_\ell S^{tt}_\ell}=\frac{\sum_\ell (\ell+1/2) W^t_\ell\hat{C}^{Ft}_\ell}{\sum_\ell(\ell+1/2) W^t_\ell S^{tt}_\ell},
+    \end{equation}
+    where $W^t_\ell=S^{tt}_\ell/C^{tt}_\ell$ is the Wiener filter of $t$, and in the last equality we have assumed that $N^{FF}_\ell$ is scale-independent.
+
 
 \end{document}

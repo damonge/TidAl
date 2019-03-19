@@ -141,13 +141,16 @@ def get_tidal_maps(theta,phi,mask,theta_sm=0.5,verbose=False,return_density_and_
     t22=0.5*(dmap_sm-q)
 
     if return_density_and_potential :
-        return dmap_sm,pot_sm,t11,t21,t22
+        return dmap,dmap_sm,pot_sm,t11,t21,t22
     else:        
         return t11,t21,t22
 
+'''
+Example:
 ns=64; crd='EQ'; rt=False; thsm=0.5
 cat=fits.open("data/2MASS_XSC.fits")[1].data
 cat=cat[cat['kcorr_schlegel']<13.9]
 th,ph=get_theta_phi(cat['sup_dec'],cat['sup_ra'],coords=crd,rotate=rt)
 mask=get_mask(th,ph,ns,coords=crd,rotate=rt)
 tid=get_tidal_maps(th,ph,mask,theta_sm=thsm)
+'''
